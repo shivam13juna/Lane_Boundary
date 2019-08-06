@@ -1,0 +1,1 @@
+model_checkpoint_path: "tusimple_lanenet_vgg.ckpt-80001"

@@ -27,6 +27,7 @@ def init_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--image_path', type=str, help='The image path or the src image save dir')
     parser.add_argument('--weights_path', type=str, help='The model weights path')
+    parser.add_argument('--save_dir', type=str, help='Directory where output images will be saved')
 
     return parser.parse_args()
 
@@ -60,7 +61,7 @@ def minmax_scale(input_arr):
     return output_arr
 
 
-def test_lanenet(image_path, weights_path):
+def test_lanenet(image_path, weights_path, save_dir):
     """
 
     :param image_path:
@@ -127,9 +128,9 @@ def test_lanenet(image_path, weights_path):
         plt.imshow(binary_seg_image[0] * 255, cmap='gray')
         plt.show()
 
-        cv2.imwrite('instance_mask_image.png', mask_image)
-        cv2.imwrite('source_image.png', postprocess_result['source_image'])
-        cv2.imwrite('binary_mask_image.png', binary_seg_image[0] * 255)
+        cv2.imwrite(save_dir+'/instance_mask_image.png', mask_image)
+        cv2.imwrite(save_dir+'/source_image.png', postprocess_result['source_image'])
+        cv2.imwrite(save_dir+'/binary_mask_image.png', binary_seg_image[0] * 255)
 
     sess.close()
 
@@ -143,4 +144,4 @@ if __name__ == '__main__':
     # init args
     args = init_args()
 
-    test_lanenet(args.image_path, args.weights_path)
+    test_lanenet(args.image_path, args.weights_path, args.save_dir)

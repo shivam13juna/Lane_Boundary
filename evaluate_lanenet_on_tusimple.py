@@ -13,11 +13,12 @@ import glob
 import os
 import os.path as ops
 import time
-
+import skvideo.io
 import cv2
 import glog as log
 import numpy as np
 import tensorflow as tf
+tf.compat.v1.logging.set_verbosity(tf.logging.ERROR)
 import tqdm
 
 from config import global_config
@@ -72,8 +73,8 @@ def test_lanenet_batch(src_dir, weights_path, save_dir):
     with sess.as_default():
 
         saver.restore(sess=sess, save_path=weights_path)
-        videodata = skvideo.io.vread(src_dir)
-        new_video = np.zeros((videopath.shape[0], 512, 256))
+        videopath = skvideo.io.vread(src_dir)
+        # new_video = np.zeros((videopath.shape[0], videopath.shape[1], videopath.shape[2], videopath.shape[3]))
         for i in range(len(videopath)):
             image_vis = videopath[i]
             image = videopath[i]
@@ -81,12 +82,12 @@ def test_lanenet_batch(src_dir, weights_path, save_dir):
             image = cv2.resize(image, (512, 256), interpolation=cv2.INTER_LINEAR)
             image = image / 127.5 - 1.0
 
-            t_start = time.time()
+            # t_start = time.time()
             binary_seg_image, instance_seg_image = sess.run(
                 [binary_seg_ret, instance_seg_ret],
                 feed_dict={input_tensor: [image]}
             )
-            avg_time_cost.append(time.time() - t_start)
+            # avg_time_cost.append(time.time() - t_start)
 
             postprocess_result = postprocessor.postprocess(
                 binary_seg_result=binary_seg_image[0],
@@ -94,20 +95,23 @@ def test_lanenet_batch(src_dir, weights_path, save_dir):
                 source_image=image_vis
 
             )
-            print("This is the shape of post_process result shape", postprocess_result['content'].shape)
-            new_video[i] = videopath[i]
+            try:
+                print("This is the shape of post_process result shape", postprocess_result['source_image'].shape)
+                videopath[i] = postprocess_result['source_image']
+            except:
+                print("Idk what happened")
 
-            if index % 100 == 0:
-                log.info('Mean inference time every single image: {:.5f}s'.format(np.mean(avg_time_cost)))
-                avg_time_cost.clear()
+        #     if index % 100 == 0:
+        #         log.info('Mean inference time every single image: {:.5f}s'.format(np.mean(avg_time_cost)))
+        #         avg_time_cost.clear()
 
-            # input_image_dir = ops.split(image_path.split('clips')[1])[0][1:]
-            # input_image_name = ops.split(image_path)[1]
-            # output_image_dir = ops.join(save_dir, input_image_dir)
-            # os.makedirs(output_image_dir, exist_ok=True)
-            output_image_path = ops.join(output_image_dir, input_image_name)
-            if ops.exists(output_image_path):
-                continue
+        #     # input_image_dir = ops.split(image_path.split('clips')[1])[0][1:]
+        #     # input_image_name = ops.split(image_path)[1]
+        #     # output_image_dir = ops.join(save_dir, input_image_dir)
+        #     # os.makedirs(output_image_dir, exist_ok=True)
+        #     output_image_path = ops.join(output_image_dir, input_image_name)
+        #     if ops.exists(output_image_path):
+        #         continue
 
         # image_list = glob.glob('{:s}/**/*.jpg'.format(src_dir), recursive=True)
         # avg_time_cost = []
@@ -129,7 +133,9 @@ def test_lanenet_batch(src_dir, weights_path, save_dir):
         #         binary_seg_result=binary_seg_image[0],
         #         instance_seg_result=instance_seg_image[0],
         #         source_image=image_vis
-        #     );print("This is the shape of post_process result shape", postprocess_result['content'].shape)
+        #     )
+        #     print("This is the shape of post_process result shape", postprocess_result['source_image'].shape)
+        #     print("This is the shape of pre_process result shape", image_vis.shape)
 
 
         #     if index % 100 == 0:
@@ -145,7 +151,7 @@ def test_lanenet_batch(src_dir, weights_path, save_dir):
         #         continue
 
         #     cv2.imwrite(output_image_path, postprocess_result['source_image'])
-
+    skvideo.io.vwrite('output.mp4', videopath)
     return
 
 
